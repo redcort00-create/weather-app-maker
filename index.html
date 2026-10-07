@@ -31,12 +31,12 @@
   <main>
     <aside class="panel left" aria-label="화면 구성 도구">
       <section class="section"><div class="brand"><div class="brand-mark" aria-hidden="true">☀️</div><div><h1>오늘의 날씨 앱 만들기</h1><p>날씨를 관찰하고, 나만의 화면으로 표현해요</p></div></div></section>
-      <section class="section"><h2>날씨 자료 선택</h2><div class="pill-row" id="weatherModeBtns"><button class="pill active" data-weather-mode="virtual" type="button">내가 꾸민 날씨</button><button class="pill" data-weather-mode="real" type="button">상도동 실제 날씨</button><button class="pill" id="refreshWeatherBtn" type="button" hidden>실제 날씨 새로고침</button></div><p id="weatherNote" class="weather-note">처음에는 맑은 하늘만 보여요. 요소를 추가해 꾸며 보세요.</p><a class="weather-credit" href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">실제 날씨 자료: Open-Meteo · CC BY 4.0</a></section>
       <section class="section"><h2>① 기상요소 추가하기</h2><p class="hint">추가한 카드를 손가락으로 옮겨 보세요.</p><div class="add-grid" id="addBtns"><button class="add-btn" data-add="temp" type="button"><span>🌡</span>기온</button><button class="add-btn" data-add="wind" type="button"><span>➤</span>바람</button><button class="add-btn" data-add="humidity" type="button"><span>💧</span>습도</button><button class="add-btn" data-add="cloud" type="button"><span>☁</span>구름의 양</button><button class="add-btn" data-add="rain" type="button"><span>☂</span>강수량</button><button class="add-btn" data-add="hourly" type="button"><span>◷</span>시간대별</button><button class="add-btn" data-add="title" type="button"><span>✎</span>제목</button><button class="add-btn" data-add="place" type="button"><span>⌖</span>우리 동네</button></div></section>
       <section class="section"><h2>생활정보 추가하기</h2><p class="hint">날씨에 맞는 옷차림, 준비물, 활동, 주의할 점을 알려 주세요.</p><button class="add-btn life-add" id="addLifeBtn" type="button"><span>💡</span>생활정보 추가</button><p class="hint life-hint" id="lifeNote">1~2개를 넣어 보세요. 추가하면 카드가 보기 좋게 정리돼요.</p></section>
       <section class="section"><h2>개발자 소개하기</h2><p class="hint">앱을 만든 나를 소개하고, 나를 나타내는 상징을 그려 보세요.</p><button class="add-btn" id="addDeveloperBtn" type="button"><span>✦</span>개발자 소개 추가</button><p class="hint life-hint">추가하면 아래쪽에 소개 카드가 생기고 카드 위치가 정리돼요.</p></section>
       <section class="section"><h2>② 하늘 배경 고르기</h2><p class="hint">관찰한 날씨에 어울리는 그림을 고르거나 직접 그려요.</p><div class="bg-grid" id="backgroundBtns"><button class="bg-option active" data-bg="sunny" type="button"><div class="bg-swatch sunny"></div>맑음</button><button class="bg-option" data-bg="partly" type="button"><div class="bg-swatch partly"></div>구름 조금</button><button class="bg-option" data-bg="cloudy" type="button"><div class="bg-swatch cloudy"></div>흐림</button><button class="bg-option" data-bg="rainy" type="button"><div class="bg-swatch rainy"></div>비</button><button class="bg-option" data-bg="sunset" type="button"><div class="bg-swatch sunset"></div>노을</button><button class="bg-option" data-bg="night" type="button"><div class="bg-swatch night"></div>밤</button></div><button id="drawBackgroundBtn" class="draw-button" type="button">🎨 배경 직접 그리기</button><label class="upload">그림 파일로 배경 넣기<input id="imageInput" type="file" accept="image/*"></label></section>
       <section class="section"><h2>임시 저장</h2><p class="hint">만든 화면은 이 브라우저에 자동 저장돼요.</p><div class="save-row"><button id="savePanelBtn" type="button">지금 저장</button><button id="loadBtn" type="button">저장본 불러오기</button></div><p id="saveNote" class="save-note">아직 저장하지 않았어요.</p></section>
+      <section class="section" id="realWeatherSection"><h2>[참고] 현재 실제날씨</h2><div class="field"><label for="weatherRegion">날씨 지역</label><select id="weatherRegion" aria-describedby="weatherRegionHint"></select></div><p id="weatherRegionHint" class="hint">서울·경기·인천 등 지역을 골라요. 각 지역의 대표 지점 날씨를 보여 줘요.</p><div class="pill-row" id="weatherModeBtns"><button class="pill" data-weather-mode="real" type="button">현재 날씨</button><button class="pill" id="refreshWeatherBtn" type="button" hidden>실제 날씨 새로고침</button><button class="pill" data-weather-mode="virtual" type="button" hidden>내가 꾸민 날씨</button></div><p id="weatherNote" class="weather-note" role="status" aria-live="polite">필요할 때 현재 실제날씨를 참고해 보세요.</p><a class="weather-credit" href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">실제 날씨 자료: Open-Meteo · CC BY 4.0</a></section>
     </aside>
     <section class="stage-wrap" aria-label="휴대폰 화면 미리보기"><div class="phone-shell"><div class="phone-screen" id="phoneScreen"><canvas id="phoneCanvas" width="390" height="844" aria-label="편집 가능한 날씨 앱 화면"></canvas><div class="phone-targets" id="phoneTargets" aria-label="휴대폰에서 바로 수정하기"></div></div></div></section>
     <aside class="panel right" aria-label="선택한 부분 설정과 화면의 요소">
@@ -71,23 +71,46 @@
   const lifeKind=l=>lifeKinds[l.category]||lifeKinds.clothing;
   const layerIcon=l=>l.emoji||(l.type==='life'?lifeKind(l).icon:icons[l.type]);
   const STORAGE_KEY='weather-app-maker-v2';
-  let seq=0, selected=null, mode=null, start=null, bg='sunny', ownImage=null, ownImageSrc=null, template='overview', modeWeather='virtual', scenes={virtual:null,real:null}, lastWeatherAt=null, saveTimer=null;
+  // Province-level choices use a representative point, not a province-wide average.
+  const weatherRegions=[
+    {id:'seoul',name:'서울',latitude:37.5665,longitude:126.9780},
+    {id:'gyeonggi',name:'경기',latitude:37.2636,longitude:127.0286},
+    {id:'incheon',name:'인천',latitude:37.4563,longitude:126.7052},
+    {id:'gangwon',name:'강원',latitude:37.8813,longitude:127.7298},
+    {id:'chungbuk',name:'충북',latitude:36.6424,longitude:127.4890},
+    {id:'chungnam',name:'충남',latitude:36.6588,longitude:126.6728},
+    {id:'daejeon',name:'대전',latitude:36.3504,longitude:127.3845},
+    {id:'sejong',name:'세종',latitude:36.4800,longitude:127.2890},
+    {id:'jeonbuk',name:'전북',latitude:35.8242,longitude:127.1480},
+    {id:'jeonnam',name:'전남',latitude:34.8118,longitude:126.4629},
+    {id:'gwangju',name:'광주',latitude:35.1595,longitude:126.8526},
+    {id:'gyeongbuk',name:'경북',latitude:36.5684,longitude:128.7294},
+    {id:'gyeongnam',name:'경남',latitude:35.2285,longitude:128.6811},
+    {id:'daegu',name:'대구',latitude:35.8714,longitude:128.6014},
+    {id:'ulsan',name:'울산',latitude:35.5384,longitude:129.3114},
+    {id:'busan',name:'부산',latitude:35.1796,longitude:129.0756},
+    {id:'jeju',name:'제주',latitude:33.4996,longitude:126.5312}
+  ];
+  const regionById=id=>weatherRegions.find(region=>region.id===id)||weatherRegions[0];
+  const regionSelect=document.getElementById('weatherRegion');
+  regionSelect.replaceChildren(...weatherRegions.map(region=>new Option(region.name,region.id)));
+  let seq=0, selected=null, mode=null, start=null, bg='sunny', ownImage=null, ownImageSrc=null, template='overview', modeWeather='virtual', scenes={virtual:null,real:null}, lastWeatherAt=null, saveTimer=null, weatherRegion='seoul', lastWeatherRegion='seoul', weatherRequest=null, weatherRequestId=0, weatherStatus=null;
   const iconCache=new Map();
   const make=(type,x,y,w,h,extra={})=>({id:++seq,type,x,y,w,h,...extra});
   let layers=[];
   const phoneScreen=document.getElementById('phoneScreen'),phoneTargets=document.getElementById('phoneTargets');
   let targets=[],editFocus=null,inlineEdit=null;
-  const defaults={title:{text:'오늘의 날씨'},place:{text:'서울특별시 상도동'},temp:{value:24},wind:{direction:'북동',speed:3},humidity:{value:58},cloud:{value:3},rain:{value:0},hourly:{slots:[{time:'아침',temp:18,sky:'☀'},{time:'점심',temp:24,sky:'☀'},{time:'저녁',temp:21,sky:'☁'},{time:'밤',temp:17,sky:'☾'}]}};
+  const defaults={title:{text:'오늘의 날씨'},place:{text:'서울'},temp:{value:24},wind:{direction:'북동',speed:3},humidity:{value:58},cloud:{value:3},rain:{value:0},hourly:{slots:[{time:'아침',temp:18,sky:'☀'},{time:'점심',temp:24,sky:'☀'},{time:'저녁',temp:21,sky:'☁'},{time:'밤',temp:17,sky:'☾'}]}};
   const clone=v=>JSON.parse(JSON.stringify(v));
   defaults.life={category:'clothing',emoji:'👕',advice:'',reason:''};
   defaults.developer={name:'',bio:''};
-  function initial(){finishInline();editFocus=null;seq=0;layers=[];selected=null;template='overview';bg='sunny';ownImage=null;ownImageSrc=null;modeWeather='virtual';lastWeatherAt=null;scenes={virtual:null,real:null};refresh();}
+  function initial(){cancelWeatherRequest();finishInline();editFocus=null;seq=0;layers=[];selected=null;template='overview';bg='sunny';ownImage=null;ownImageSrc=null;modeWeather='virtual';lastWeatherAt=null;weatherRegion='seoul';lastWeatherRegion='seoul';scenes={virtual:null,real:null};refresh();}
   function sceneSnapshot(){return {layers:clone(layers),selected,template,bg,ownImageSrc};}
   function rememberScene(){scenes[modeWeather]=sceneSnapshot();}
   function restoreScene(name){let s=scenes[name];if(!s)return;finishInline();editFocus=null;layers=clone(s.layers||[]);selected=s.selected??null;template=s.template==='life'?'life':'overview';bg=s.bg||'sunny';ownImageSrc=s.ownImageSrc||null;ownImage=null;if(ownImageSrc){let img=new Image();img.onload=()=>{ownImage=img;render(ctx);};img.src=ownImageSrc;}refresh(false);}
-  function saveNow(){rememberScene();try{localStorage.setItem(STORAGE_KEY,JSON.stringify({version:2,seq,modeWeather,scenes,lastWeatherAt,savedAt:new Date().toISOString()}));document.getElementById('saveNote').textContent='이 브라우저에 저장됨 · '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});document.getElementById('status').textContent='임시 저장했어요.';return true;}catch(error){document.getElementById('saveNote').textContent='저장 공간이 부족하거나 사용할 수 없어요.';return false;}}
+  function saveNow(){rememberScene();try{localStorage.setItem(STORAGE_KEY,JSON.stringify({version:2,seq,modeWeather,scenes,lastWeatherAt,weatherRegion,lastWeatherRegion,savedAt:new Date().toISOString()}));document.getElementById('saveNote').textContent='이 브라우저에 저장됨 · '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});document.getElementById('status').textContent='임시 저장했어요.';return true;}catch(error){document.getElementById('saveNote').textContent='저장 공간이 부족하거나 사용할 수 없어요.';return false;}}
   function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(saveNow,450);}
-  function loadSaved(){try{let raw=localStorage.getItem(STORAGE_KEY);if(!raw)return false;let data=JSON.parse(raw);if(data.version!==2||!data.scenes?.virtual)return false;seq=Number(data.seq)||0;scenes=data.scenes;modeWeather=data.modeWeather==='real'&&scenes.real?'real':'virtual';lastWeatherAt=data.lastWeatherAt||null;restoreScene(modeWeather);document.getElementById('saveNote').textContent='저장한 화면을 불러왔어요.';return true;}catch(error){document.getElementById('saveNote').textContent='저장본을 읽지 못했어요.';return false;}}
+  function loadSaved(){try{let raw=localStorage.getItem(STORAGE_KEY);if(!raw)return false;let data=JSON.parse(raw);if(data.version!==2||!data.scenes?.virtual)return false;cancelWeatherRequest();seq=Number(data.seq)||0;scenes=data.scenes;modeWeather='virtual';lastWeatherAt=data.lastWeatherAt||null;weatherRegion=regionById(data.weatherRegion).id;lastWeatherRegion=regionById(data.lastWeatherRegion||data.weatherRegion).id;if(!data.weatherRegion&&scenes.real)scenes.real.layers?.filter(l=>l.type==='place').forEach(l=>l.text='서울');restoreScene(modeWeather);document.getElementById('saveNote').textContent='저장한 화면을 불러왔어요.';return true;}catch(error){document.getElementById('saveNote').textContent='저장본을 읽지 못했어요.';return false;}}
   function roundRect(c,x,y,w,h,r){r=Math.min(r,w/2,h/2);c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
   function fillRound(c,x,y,w,h,r,fill){roundRect(c,x,y,w,h,r);c.fillStyle=fill;c.fill();}
   function text(c,t,x,y,size,color='#173953',weight=700,align='left'){c.font=`${weight} ${size}px system-ui,-apple-system,"Malgun Gothic",sans-serif`;c.fillStyle=color;c.textAlign=align;c.textBaseline='middle';c.fillText(String(t),x,y);}
@@ -177,7 +200,8 @@
     else{let label=type==='rain'&&modeWeather==='real'?'최근 강수량':names[type],value='';if(type==='wind')value=`${l.direction||'북동'}풍  ${l.speed??0}m/s`;if(type==='humidity')value=`${l.value??0}%`;if(type==='cloud')value=`${l.value??0}/10`;if(type==='rain')value=`${l.value??0}mm`;drawIcon(c,l,x+pad,y+29*scale-iconSize/2,iconSize);fittedText(c,label,x+pad+iconSize+5,y+29*scale,w-2*pad-iconSize-5,Math.min(16,h*.17),'#667f92',750);const size=fittedText(c,value,x+pad,y+h*.68,w-2*pad,Math.min(52,h*.43),'#19415f',850),ty=y+h*.68-size*.65;if(type==='wind'){const directionWidth=c.measureText(`${l.direction||'북동'}풍  `).width;target(c,l,'direction','바람 방향',x+pad,ty,directionWidth,size*1.3,size);target(c,l,'speed','바람 빠르기',x+pad+directionWidth,ty,w-2*pad-directionWidth,size*1.3,size);}else target(c,l,'value',names[type],x+pad,ty,w-2*pad,size*1.3,size);}
     c.restore();}
   function render(c,showSelection=true){if(c===ctx)targets=[];c.clearRect(0,0,W,H);drawBackground(c);text(c,'9:41',28,33,14,bg==='night'||bg==='rainy'?'#fff':'#234861',800);text(c,'●●●  ▰',362,33,12,bg==='night'||bg==='rainy'?'#fff':'#234861',750,'right');layers.forEach(l=>drawLayer(c,l));if(modeWeather==='real')text(c,'자료 Open-Meteo · 수치 반올림',W-18,H-25,10,bg==='night'||bg==='rainy'?'#fff':'#315b78',650,'right');if(showSelection){let l=layers.find(q=>q.id===selected);if(l){c.save();c.strokeStyle='#1479ce';c.lineWidth=3;c.setLineDash([8,5]);roundRect(c,l.x-2,l.y-2,l.w+4,l.h+4,20);c.stroke();c.setLineDash([]);fillRound(c,l.x+l.w-17,l.y+l.h-17,25,25,7,'#1479ce');text(c,'↘',l.x+l.w-4,l.y+l.h-4,16,'#fff',800,'center');c.restore();}}if(c===ctx)syncPhoneTargets();}
-  function refresh(shouldSave=true){render(ctx);document.querySelectorAll('[data-bg]').forEach(b=>b.classList.toggle('active',b.dataset.bg===bg));document.getElementById('drawBackgroundBtn').classList.toggle('active',bg==='drawn');document.querySelectorAll('[data-weather-mode]').forEach(b=>b.classList.toggle('active',b.dataset.weatherMode===modeWeather));document.getElementById('refreshWeatherBtn').hidden=modeWeather!=='real';if(modeWeather==='real'&&lastWeatherAt)document.getElementById('weatherNote').textContent=`상도동 일대 예보 · ${lastWeatherAt.replace('T',' ')} 기준`;else if(modeWeather==='virtual')document.getElementById('weatherNote').textContent=layers.length?'내가 만든 가상 날씨를 자유롭게 고칠 수 있어요.':'처음에는 맑은 하늘만 보여요. 요소를 추가해 꾸며 보세요.';renderEditor();renderLayerList();if(shouldSave)scheduleSave();}
+  function updateWeatherControls(){regionSelect.value=weatherRegion;document.querySelectorAll('[data-weather-mode]').forEach(b=>{b.classList.toggle('active',b.dataset.weatherMode===modeWeather);if(b.dataset.weatherMode==='real')b.disabled=!!weatherRequest;else b.hidden=modeWeather!=='real'&&!weatherRequest;});const button=document.getElementById('refreshWeatherBtn');button.hidden=modeWeather!=='real';button.disabled=!!weatherRequest;const note=document.getElementById('weatherNote');note.classList.toggle('error',!!weatherStatus?.error);if(weatherStatus)note.textContent=weatherStatus.message;else if(modeWeather==='real'&&lastWeatherAt)note.textContent=`${regionById(lastWeatherRegion).name} 대표 지점 예보 · ${lastWeatherAt.replace('T',' ')} 기준`;else note.textContent='필요할 때 현재 실제날씨를 참고해 보세요.';}
+  function refresh(shouldSave=true){render(ctx);document.querySelectorAll('[data-bg]').forEach(b=>b.classList.toggle('active',b.dataset.bg===bg));document.getElementById('drawBackgroundBtn').classList.toggle('active',bg==='drawn');updateWeatherControls();renderEditor();renderLayerList();if(shouldSave)scheduleSave();}
   function esc(s){return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
   function renderEditor(){
     const box=document.getElementById('editor'),heading=document.getElementById('editorHeading'),l=layers.find(q=>q.id===selected);
@@ -216,9 +240,35 @@
   function ensureRealLayers(){const specs=positionsFor(template);['title','place','temp','wind','humidity','cloud','rain','hourly'].forEach(type=>{if(!layers.some(l=>l.type===type))layers.push(make(type,...specs[type],clone(defaults[type])));});if(!selected)selected=layers.find(l=>l.type==='temp')?.id||null;}
   function skyFor(code,night=false){if(code===0)return night?'☾':'☀';if(code<=2)return '⛅';if(code<=48)return '☁';if(code>=71&&code<=86)return '❄';return '☂';}
   function weatherBackground(current){if(!current.is_day)return 'night';if(current.weather_code>=51||current.precipitation>0)return 'rainy';if(current.cloud_cover>=70)return 'cloudy';if(current.cloud_cover>=25)return 'partly';return 'sunny';}
-  function applyWeatherData(data){const c=data.current;if(!c||!Number.isFinite(c.temperature_2m)||!Number.isFinite(c.wind_speed_10m))throw new Error('날씨 자료가 비어 있습니다.');ensureRealLayers();let labels=['아침','점심','저녁','밤'],hours=['09','12','18','21'],day=String(c.time).slice(0,10);layers.forEach(l=>{if(l.type==='place')l.text='서울특별시 상도동';if(l.type==='temp')l.value=Math.round(c.temperature_2m);if(l.type==='humidity')l.value=Math.round(c.relative_humidity_2m);if(l.type==='cloud')l.value=Math.round(c.cloud_cover/10);if(l.type==='rain'){l.value=Math.round(c.precipitation*10)/10;l.periodMinutes=Math.round((c.interval||900)/60);}if(l.type==='wind'){l.direction=['북','북동','동','남동','남','남서','서','북서'][Math.round(c.wind_direction_10m/45)%8];l.speed=Math.round(c.wind_speed_10m*10)/10;}if(l.type==='hourly')l.slots=hours.map((hour,i)=>{let index=data.hourly?.time?.indexOf(`${day}T${hour}:00`)??-1;return {time:labels[i],temp:index>=0?Math.round(data.hourly.temperature_2m[index]):Math.round(c.temperature_2m),sky:index>=0?skyFor(data.hourly.weather_code[index],i===3):skyFor(c.weather_code,i===3)};});});if(bg!=='upload'&&bg!=='drawn')bg=weatherBackground(c);lastWeatherAt=String(c.time||'');refresh();}
-  async function fetchRealWeather(){let note=document.getElementById('weatherNote'),button=document.querySelector('[data-weather-mode="real"]');note.classList.remove('error');note.textContent='상도동 날씨를 불러오는 중…';button.disabled=true;try{const url='https://api.open-meteo.com/v1/forecast?latitude=37.5028&longitude=126.9478&current=temperature_2m,relative_humidity_2m,precipitation,cloud_cover,wind_speed_10m,wind_direction_10m,weather_code,is_day&hourly=temperature_2m,weather_code&wind_speed_unit=ms&timezone=Asia%2FSeoul&forecast_days=1';const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);let response;try{response=await fetch(url,{signal:controller.signal,cache:'no-store'});}finally{clearTimeout(timer);}if(!response.ok)throw new Error('날씨 서버 응답 오류');let data=await response.json();if(modeWeather!=='real'){rememberScene();if(!scenes.real)scenes.real=clone(scenes.virtual);modeWeather='real';restoreScene('real');}applyWeatherData(data);}catch(error){note.textContent='실제 날씨를 불러오지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.';note.classList.add('error');document.getElementById('status').textContent=note.textContent;}finally{button.disabled=false;}}
-  function switchToVirtual(){if(modeWeather==='virtual')return;rememberScene();modeWeather='virtual';restoreScene('virtual');scheduleSave();}
+  function applyWeatherData(data,region){const c=data.current;if(!c||!Number.isFinite(c.temperature_2m)||!Number.isFinite(c.wind_speed_10m))throw new Error('날씨 자료가 비어 있습니다.');ensureRealLayers();let labels=['아침','점심','저녁','밤'],hours=['09','12','18','21'],day=String(c.time).slice(0,10);layers.forEach(l=>{if(l.type==='place')l.text=region.name;if(l.type==='temp')l.value=Math.round(c.temperature_2m);if(l.type==='humidity')l.value=Math.round(c.relative_humidity_2m);if(l.type==='cloud')l.value=Math.round(c.cloud_cover/10);if(l.type==='rain'){l.value=Math.round(c.precipitation*10)/10;l.periodMinutes=Math.round((c.interval||900)/60);}if(l.type==='wind'){l.direction=['북','북동','동','남동','남','남서','서','북서'][Math.round(c.wind_direction_10m/45)%8];l.speed=Math.round(c.wind_speed_10m*10)/10;}if(l.type==='hourly')l.slots=hours.map((hour,i)=>{let index=data.hourly?.time?.indexOf(`${day}T${hour}:00`)??-1;return {time:labels[i],temp:index>=0?Math.round(data.hourly.temperature_2m[index]):Math.round(c.temperature_2m),sky:index>=0?skyFor(data.hourly.weather_code[index],i===3):skyFor(c.weather_code,i===3)};});});if(bg!=='upload'&&bg!=='drawn')bg=weatherBackground(c);lastWeatherAt=String(c.time||'');lastWeatherRegion=region.id;refresh();}
+  function cancelWeatherRequest(){weatherRequestId++;weatherRequest?.abort();weatherRequest=null;weatherStatus=null;}
+  async function fetchRealWeather(){
+    const region=regionById(weatherRegion),requestId=++weatherRequestId;
+    weatherRequest?.abort();
+    const controller=new AbortController();weatherRequest=controller;
+    weatherStatus={message:`${region.name} 날씨를 불러오는 중…`};updateWeatherControls();
+    const timer=setTimeout(()=>controller.abort(),12000);
+    try{
+      const url=`https://api.open-meteo.com/v1/forecast?latitude=${region.latitude}&longitude=${region.longitude}&current=temperature_2m,relative_humidity_2m,precipitation,cloud_cover,wind_speed_10m,wind_direction_10m,weather_code,is_day&hourly=temperature_2m,weather_code&wind_speed_unit=ms&timezone=Asia%2FSeoul&forecast_days=1`;
+      const response=await fetch(url,{signal:controller.signal,cache:'no-store'});
+      if(!response.ok)throw new Error('날씨 서버 응답 오류');
+      const data=await response.json();
+      if(requestId!==weatherRequestId)return;
+      if(!data.current||!Number.isFinite(data.current.temperature_2m)||!Number.isFinite(data.current.wind_speed_10m))throw new Error('날씨 자료가 비어 있습니다.');
+      finishInline();
+      if(modeWeather!=='real'){rememberScene();if(!scenes.real)scenes.real=clone(scenes.virtual);modeWeather='real';restoreScene('real');}
+      weatherStatus=null;applyWeatherData(data,region);
+    }catch(error){
+      if(requestId!==weatherRequestId)return;
+      if(modeWeather==='real')weatherRegion=lastWeatherRegion;
+      weatherStatus={message:`${region.name} 날씨를 불러오지 못했어요. 인터넷 연결을 확인하고 다시 골라 주세요.`,error:true};
+      scheduleSave();
+    }finally{
+      clearTimeout(timer);
+      if(requestId===weatherRequestId){weatherRequest=null;updateWeatherControls();}
+    }
+  }
+  function switchToVirtual(){cancelWeatherRequest();if(modeWeather==='virtual'){refresh(false);return;}finishInline();rememberScene();modeWeather='virtual';restoreScene('virtual');scheduleSave();}
   function point(e){let r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height};}
   function hit(p){for(let i=layers.length-1;i>=0;i--){let l=layers[i];if(p.x>=l.x&&p.x<=l.x+l.w&&p.y>=l.y&&p.y<=l.y+l.h)return l;}return null;}
   phoneScreen.addEventListener('pointerdown',e=>{
@@ -240,6 +290,7 @@
   phoneScreen.addEventListener('pointerup',endPointer);phoneScreen.addEventListener('pointercancel',endPointer);phoneScreen.addEventListener('lostpointercapture',endPointer);
   document.getElementById('weatherModeBtns').addEventListener('click',e=>{let b=e.target.closest('[data-weather-mode]');if(!b)return;if(b.dataset.weatherMode==='real')fetchRealWeather();else switchToVirtual();});
   document.getElementById('refreshWeatherBtn').addEventListener('click',fetchRealWeather);
+  regionSelect.addEventListener('change',()=>{weatherRegion=regionById(regionSelect.value).id;if(modeWeather==='real'||weatherRequest)fetchRealWeather();else{weatherStatus=null;refresh();}scheduleSave();});
   document.getElementById('backgroundBtns').addEventListener('click',e=>{let b=e.target.closest('[data-bg]');if(b){bg=b.dataset.bg;refresh();}});
   document.getElementById('addBtns').addEventListener('click',e=>{let b=e.target.closest('[data-add]');if(b)addLayer(b.dataset.add);});
   document.getElementById('addLifeBtn').addEventListener('click',()=>addLayer('life'));
@@ -268,7 +319,7 @@
   document.getElementById('loadBtn').addEventListener('click',()=>{clearTimeout(saveTimer);if(!loadSaved())document.getElementById('saveNote').textContent='불러올 저장본이 없어요.';});
   document.getElementById('resetBtn').addEventListener('click',()=>{if(!confirm('저장한 화면을 지우고 맑은 하늘에서 다시 시작할까요?'))return;initial();document.getElementById('status').textContent='맑은 하늘에서 다시 시작해요.';});
   document.getElementById('downloadBtn').addEventListener('click',async()=>{if(!selected&&layers.length){selected=layers.at(-1).id;refresh();}await Promise.all(layers.filter(l=>l.iconData).map(l=>iconImage(l.iconData).ready));let out=document.createElement('canvas');out.width=(W+32)*3;out.height=(H+32)*3;let c=out.getContext('2d');c.scale(3,3);c.shadowColor='#0a284555';c.shadowBlur=16;c.shadowOffsetY=6;fillRound(c,2,2,W+28,H+28,45,'#1b2c3d');c.shadowColor='transparent';c.save();roundRect(c,16,16,W,H,30);c.clip();c.translate(16,16);render(c,true);c.restore();fillRound(c,(W+32-85)/2,16,85,22,10,'#1b2c3d');fillRound(c,(W+32-75)/2,H+23,75,4,3,'#ffffffb5');out.toBlob(blob=>{if(!blob){document.getElementById('status').textContent='그림 저장에 실패했어요.';return;}let url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='나의-날씨앱.png';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);document.getElementById('status').textContent='휴대폰 테두리와 손잡이가 포함된 PNG를 저장했어요.';},'image/png');});
-  if(!loadSaved())initial();else if(modeWeather==='real')fetchRealWeather();
+  if(!loadSaved())initial();
 })();
 </script>
 </body>
