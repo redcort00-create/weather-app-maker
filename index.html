@@ -21,6 +21,7 @@
     .life-add{width:100%;margin-top:9px;background:#eef8f4;border-color:#b9ded0;color:#276b54}.life-add:disabled{cursor:default;opacity:.55}.life-hint{margin:8px 0 0}.field textarea{width:100%;min-height:76px;resize:vertical;border:1px solid #cfdee8;border-radius:10px;background:#fbfdff;padding:9px 10px;color:#233f55;line-height:1.5}
     .phone-screen{position:relative;width:100%;height:100%;border-radius:29px;overflow:hidden;touch-action:none}.phone-targets{position:absolute;inset:0;pointer-events:none}.phone-target{position:absolute;pointer-events:auto;border:0;border-radius:6px;background:transparent;padding:0;touch-action:none;cursor:text}.phone-target.choice{cursor:pointer}.phone-target:hover{background:#237bd115;box-shadow:inset 0 0 0 1px #237bd180}.phone-target:focus-visible{outline:2px solid #1479ce;outline-offset:-2px;background:#237bd115}.inline-input{position:absolute;z-index:3;pointer-events:auto;resize:none;border:2px solid #1479ce;border-radius:7px;background:#f4fbff;color:#19415f;padding:2px 4px;font-weight:800;line-height:1.3;min-height:28px;outline:none;box-shadow:0 2px 10px #1479ce30}.inline-input:focus{outline:none}.right{display:flex;flex-direction:column;overflow:hidden}.right .top-actions{flex:none;margin-bottom:14px;padding-bottom:14px}.right-content{min-height:0;overflow:auto;flex:1}.right-content .section{margin:0;padding:0;border:0}.selection-name{font-size:13px;font-weight:800;color:#176ec1;margin:0 0 10px}.edit-actions{margin-top:16px}
     .right-content{display:flex;flex-direction:column;gap:18px}.right-content>.section{flex:none}.right-content .layers-section{margin-top:auto;padding-top:16px;border-top:1px solid #e7eef3}
+    .color-icon{font-family:"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif;font-weight:400}
     @media(max-width:900px){main{grid-template-columns:205px minmax(230px,1fr) 205px;gap:8px;padding:4px}.panel{padding:12px;border-radius:14px}.brand p{display:none}.phone-shell{width:min(100%,calc(46.2dvh - 4px));border-width:7px}}
     @media(max-width:700px){html,body{overflow:auto}.app{height:auto;min-height:100dvh}main{grid-template-columns:1fr 1fr;grid-template-areas:"stage stage" "left right";height:auto}.panel{max-height:none;overflow:visible}.left{grid-area:left}.right{grid-area:right}.stage-wrap{grid-area:stage;height:min(88dvh,760px)}.phone-shell{width:min(100%,calc(40.6dvh - 3px),350px);height:auto}}
     @media(max-width:700px){main{padding-bottom:100px}.right-content{overflow:visible}.right .top-actions{position:fixed;left:8px;right:8px;bottom:8px;z-index:5;grid-template-columns:1fr 1fr 1.5fr;gap:7px;margin:0;padding:10px;background:#fff;border:1px solid #cfdee8;border-radius:15px;box-shadow:0 4px 24px #18304730}.top-actions .download{grid-column:auto}.inline-input{font-size:16px!important}}
@@ -57,6 +58,10 @@
   const W=390,H=844, canvas=document.getElementById('phoneCanvas'), ctx=canvas.getContext('2d');
   const names={title:'제목',place:'우리 동네',temp:'기온',wind:'바람',humidity:'습도',cloud:'구름의 양',rain:'강수량',hourly:'시간대별 날씨',life:'생활정보',developer:'개발자 소개'};
   const icons={title:'✎',place:'⌖',temp:'🌡',wind:'➤',humidity:'💧',cloud:'☁',rain:'☂',hourly:'◷',life:'💡',developer:'✦'};
+  // Preserve saved icon keys; normalize only their displayed glyphs to color emoji.
+  const colorSymbols={'✎':'✏️','⌖':'📍','🌡':'🌡️','➤':'➡️','☀':'☀️','☁':'☁️','☂':'☂️','❄':'❄️','🌧':'🌧️','◷':'🕒','✦':'🌟','☾':'🌙','🕶':'🕶️'};
+  const colorIcon=value=>{const key=String(value||'').replace(/[\uFE0E\uFE0F]/g,'');return colorSymbols[key]||key;};
+  document.querySelectorAll('.add-btn span,.brand-mark').forEach(element=>{element.textContent=colorIcon(element.textContent);element.classList.add('color-icon');});
   const lifeKinds={
     clothing:{label:'옷차림',icon:'👕'},
     supplies:{label:'준비물',icon:'☂️'},
@@ -69,7 +74,8 @@
     ['🚲','자전거'],['🚶','걷기'],['🧴','선크림'],['🧤','장갑'],['🧣','목도리'],['🪟','창문']
   ];
   const lifeKind=l=>lifeKinds[l.category]||lifeKinds.clothing;
-  const layerIcon=l=>l.emoji||(l.type==='life'?lifeKind(l).icon:icons[l.type]);
+  const hasIcon=l=>!l.iconHidden;
+  const layerIcon=l=>hasIcon(l)?l.emoji||(l.type==='life'?lifeKind(l).icon:icons[l.type]):'';
   const STORAGE_KEY='weather-app-maker-v2';
   // Province-level choices use a representative point, not a province-wide average.
   const weatherRegions=[
@@ -125,7 +131,8 @@
   }
   function card(c,l){let {x,y,w,h}=l;c.save();c.shadowColor='#15375025';c.shadowBlur=18;c.shadowOffsetY=6;fillRound(c,x,y,w,h,20,'rgba(255,255,255,.88)');c.restore();}
   function iconImage(src){if(!src)return null;if(iconCache.has(src))return iconCache.get(src);let image=new Image(),entry={image,ready:null};entry.ready=new Promise(resolve=>{image.onload=()=>{render(ctx);resolve();};image.onerror=resolve;});image.src=src;iconCache.set(src,entry);return entry;}
-  function drawIcon(c,l,x,y,size){let entry=iconImage(l.iconData);if(entry?.image.complete&&entry.image.naturalWidth)c.drawImage(entry.image,x,y,size,size);else text(c,layerIcon(l)||'◯',x+size/2,y+size/2,size*.9,'#52758f',700,'center');target(c,l,'icon',`${names[l.type]} 아이콘`,x-4,y-4,size+8,size+8);}
+  function drawColorIcon(c,value,x,y,size){c.save();c.font=`${size*.86}px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif`;c.textAlign='center';c.textBaseline='middle';c.fillText(colorIcon(value)||'🔵',x+size/2,y+size/2);c.restore();}
+  function drawIcon(c,l,x,y,size){if(!hasIcon(l))return;let entry=iconImage(l.iconData);if(entry?.image.complete&&entry.image.naturalWidth)c.drawImage(entry.image,x,y,size,size);else drawColorIcon(c,layerIcon(l),x,y,size);target(c,l,'icon',`${names[l.type]} 아이콘`,x-4,y-4,size+8,size+8);}
   function wrappedLines(c,value,width){const lines=[];let line='';for(const ch of String(value).replace(/\s+/g,' ').trim()){if(line&&c.measureText(line+ch).width>width){lines.push(line.trimEnd());line=ch.trimStart();}else line+=ch;}lines.push(line.trimEnd());return lines;}
   function textBlock(c,value,x,y,width,height,maxSize,color,weight){let size=maxSize,lines;do{c.font=`${weight} ${size}px system-ui,-apple-system,"Malgun Gothic",sans-serif`;lines=wrappedLines(c,value,width);if(lines.length*size*1.3<=height||size<=9)break;size-=.5;}while(size>0);const lineHeight=size*1.3;lines.forEach((line,i)=>text(c,line,x,y+lineHeight*(i+.5),size,color,weight));}
   // The hit areas use the same canvas coordinates as the text and icons.
@@ -188,16 +195,79 @@
   }
   document.addEventListener('pointerdown',e=>{if(inlineEdit&&e.target!==inlineEdit.input)finishInline();},true);
   phoneTargets.addEventListener('click',e=>{const button=e.target.closest('[data-part]');if(button&&e.detail===0){const t=targets.find(t=>t.id===Number(button.dataset.id)&&t.key===button.dataset.part);if(t)activateTarget(t);}});
-  function drawLifeCard(c,l){const {x,y,w,h}=l,pad=16,kind=lifeKind(l);card(c,l);drawIcon(c,l,x+pad,y+11,24);text(c,`생활정보 · ${kind.label}`,x+pad+32,y+23,12,'#36715b',800);target(c,l,'category','생활정보 종류',x+pad+32,y+9,w-pad*2-32,28);const available=h-54,adviceHeight=available*.49; textBlock(c,l.advice||'어떻게 생활하면 좋을까요?',x+pad,y+42,w-pad*2,adviceHeight,22,l.advice?'#194b3c':'#6e897f',850);target(c,l,'advice','생활 제안',x+pad,y+42,w-pad*2,adviceHeight,22);textBlock(c,l.reason||'어떤 날씨 정보를 보고 생각했나요?',x+pad,y+46+adviceHeight,w-pad*2,available-adviceHeight-4,14,l.reason?'#547368':'#7e948b',650);target(c,l,'reason','날씨 근거',x+pad,y+46+adviceHeight,w-pad*2,available-adviceHeight-4,14);}
-  function drawDeveloperCard(c,l){const {x,y,w,h}=l,pad=14,iconSize=48;card(c,l);fillRound(c,x+pad,y+12,iconSize,iconSize,12,'#e9edfb');drawIcon(c,l,x+pad+4,y+16,iconSize-8);const tx=x+pad+iconSize+12,tw=w-pad*2-iconSize-12;text(c,'개발자 소개',tx,y+23,11,'#626e98',800);fittedText(c,l.name||'이름이나 별명',tx,y+45,tw,19,l.name?'#33446b':'#7b859d',850);target(c,l,'name','이름 또는 별명',tx,y+31,tw,28,19);textBlock(c,l.bio||'어떤 날씨 앱을 만들고 싶었나요?',x+pad,y+67,w-pad*2,h-77,13,l.bio?'#566683':'#7b859d',650);target(c,l,'bio','개발자 소개',x+pad,y+67,w-pad*2,h-77,13);}
+  function drawLifeCard(c,l){const {x,y,w,h}=l,pad=16,kind=lifeKind(l),tx=x+pad+(hasIcon(l)?32:0);card(c,l);drawIcon(c,l,x+pad,y+11,24);text(c,`생활정보 · ${kind.label}`,tx,y+23,12,'#36715b',800);target(c,l,'category','생활정보 종류',tx,y+9,x+w-pad-tx,28);const available=h-54,adviceHeight=available*.49; textBlock(c,l.advice||'어떻게 생활하면 좋을까요?',x+pad,y+42,w-pad*2,adviceHeight,22,l.advice?'#194b3c':'#6e897f',850);target(c,l,'advice','생활 제안',x+pad,y+42,w-pad*2,adviceHeight,22);textBlock(c,l.reason||'어떤 날씨 정보를 보고 생각했나요?',x+pad,y+46+adviceHeight,w-pad*2,available-adviceHeight-4,14,l.reason?'#547368':'#7e948b',650);target(c,l,'reason','날씨 근거',x+pad,y+46+adviceHeight,w-pad*2,available-adviceHeight-4,14);}
+  function drawDeveloperCard(c,l){const {x,y,w,h}=l,pad=14,iconSize=48;card(c,l);if(hasIcon(l)){fillRound(c,x+pad,y+12,iconSize,iconSize,12,'#e9edfb');drawIcon(c,l,x+pad+4,y+16,iconSize-8);}const tx=x+pad+(hasIcon(l)?iconSize+12:0),tw=x+w-pad-tx;text(c,'개발자 소개',tx,y+23,11,'#626e98',800);fittedText(c,l.name||'이름이나 별명',tx,y+45,tw,19,l.name?'#33446b':'#7b859d',850);target(c,l,'name','이름 또는 별명',tx,y+31,tw,28,19);textBlock(c,l.bio||'어떤 날씨 앱을 만들고 싶었나요?',x+pad,y+67,w-pad*2,h-77,13,l.bio?'#566683':'#7b859d',650);target(c,l,'bio','개발자 소개',x+pad,y+67,w-pad*2,h-77,13);}
+  // Fit each unbroken line to its own area; use that same area for inline editing.
+  function metricText(c,l,key,value,box,limit=Infinity,color='#19415f',weight=850,align='center'){
+    const size=fittedText(c,value,box.x+(align==='center'?box.w/2:0),box.y+box.h/2,box.w,Math.min(box.h/1.3,limit),color,weight,align);
+    if(key)target(c,l,key,key==='direction'?'바람 방향':key==='speed'?'바람 빠르기':names[l.type],box.x,box.y,box.w,box.h,size);
+    return size;
+  }
+  function drawWeatherCard(c,l){
+    const {x,y,w,h,type}=l,isCloud=type==='cloud',isWind=type==='wind',showIcon=hasIcon(l);
+    const pad=Math.max(6,Math.min(18,Math.min(w,h)*.09)),gap=Math.max(4,Math.min(16,Math.min(w,h)*.05));
+    const inner={x:x+pad,y:y+pad,w:w-pad*2,h:h-pad*2};
+    const wide=w/h>=(isCloud?1.45:1.9),tall=h>=w;
+    const label=type==='temp'?'지금 기온':type==='rain'&&modeWeather==='real'?'최근 강수량':names[type];
+    let iconSize,iconX,iconY,labelBox,valueBox,align='center';
+    card(c,l);
+    if(!showIcon){
+      labelBox={...inner,h:inner.h*.26};
+      valueBox={...inner,y:inner.y+inner.h*.32,h:inner.h*.68};
+    }else if(wide){
+      // A wide card gives the icon its own column and keeps values on one line.
+      iconSize=Math.min(inner.h,inner.w*(isCloud?.43:.28));
+      iconX=inner.x;iconY=inner.y+(inner.h-iconSize)/2;align='left';
+      const tx=iconX+iconSize+gap,tw=inner.x+inner.w-tx;
+      labelBox={x:tx,y:inner.y,w:tw,h:inner.h*.26};
+      valueBox={x:tx,y:inner.y+inner.h*.32,w:tw,h:inner.h*.68};
+    }else if(isCloud||tall){
+      // Stack in narrow/tall cards, reserving distinct bands for every item.
+      labelBox={x:inner.x,y:inner.y,w:inner.w,h:inner.h*.14};
+      const iconTop=inner.y+labelBox.h+gap,iconBand=inner.h*(isCloud?.50:isWind?.30:.40);
+      iconSize=Math.min(inner.w-8,iconBand-gap);
+      iconX=inner.x+(inner.w-iconSize)/2;iconY=iconTop+(iconBand-iconSize)/2;
+      const valueTop=iconTop+iconBand+gap;
+      valueBox={x:inner.x,y:valueTop,w:inner.w,h:inner.y+inner.h-valueTop};
+    }else{
+      // Compact cards retain a small header so the measurement gets the width.
+      const headerH=inner.h*.28;
+      iconSize=Math.min(headerH,inner.w*.22);iconX=inner.x;iconY=inner.y+(headerH-iconSize)/2;
+      labelBox={x:iconX+iconSize+gap,y:inner.y,w:inner.w-iconSize-gap,h:headerH};
+      valueBox={x:inner.x,y:inner.y+headerH+gap,w:inner.w,h:inner.h-headerH-gap};
+    }
+    if(showIcon)drawIcon(c,l,iconX,iconY,iconSize);
+    metricText(c,l,null,label,labelBox,Infinity,'#667f92',750,wide&&showIcon?'left':'center');
+    if(isWind){
+      const direction=`${l.direction||'북동'}풍`,speed=`${l.speed??0}m/s`;
+      if(tall){
+        const rowH=(valueBox.h-gap)/2;
+        // Share a font size so direction and speed have equal visual weight.
+        c.font='850 100px system-ui,-apple-system,"Malgun Gothic",sans-serif';
+        const size=Math.min(rowH/1.3,valueBox.w*100/Math.max(c.measureText(direction).width,c.measureText(speed).width));
+        metricText(c,l,'direction',direction,{...valueBox,h:rowH},size);
+        metricText(c,l,'speed',speed,{...valueBox,y:valueBox.y+rowH+gap,h:rowH},size);
+      }else{
+        const value=`${direction}  ${speed}`,size=metricText(c,l,null,value,valueBox,Infinity,'#19415f',850,align);
+        const directionWidth=c.measureText(direction).width,space=c.measureText('  ').width,totalWidth=c.measureText(value).width;
+        const left=valueBox.x+(align==='center'?(valueBox.w-totalWidth)/2:0),split=left+directionWidth+space/2;
+        target(c,l,'direction','바람 방향',left,valueBox.y,directionWidth+space/2,valueBox.h,size);
+        target(c,l,'speed','바람 빠르기',split,valueBox.y,totalWidth-directionWidth-space/2,valueBox.h,size);
+      }
+    }else{
+      const value={temp:`${l.value??24}℃`,humidity:`${l.value??0}%`,cloud:`${l.value??0}/10`,rain:`${l.value??0}mm`}[type];
+      const iconPriority=isCloud&&showIcon;
+      metricText(c,l,'value',value,valueBox,iconPriority?iconSize*.42:Infinity,iconPriority?'#667f92':'#19415f',iconPriority?650:850,align);
+    }
+  }
   function drawLayer(c,l){const {x,y,w,h,type}=l,scale=Math.min(w/(type==='hourly'?342:type==='title'||type==='place'?342:type==='temp'?342:163),h/(type==='hourly'?148:type==='title'?76:type==='place'?55:type==='temp'?145:108));c.save();c.beginPath();c.rect(x,y,w,h);c.clip();
     if(type==='title'){const size=Math.max(16,Math.min(31,29*scale));text(c,l.text||'오늘의 날씨',x+4,y+h*.42,size,'#fff',850);target(c,l,'text','화면 제목',x+4,y+h*.42-size*.65,w-8,size*1.3,size);text(c,'우리 동네 하늘을 살펴봐요',x+5,y+h*.78,Math.max(9,13*scale),'#ffffffdf',650);c.restore();return;}
-    if(type==='place'){fillRound(c,x,y,w,h,16,'rgba(255,255,255,.76)');fittedText(c,`⌖  ${l.text||'우리 동네'}`,x+15,y+h/2,w-30,Math.min(24,h*.48),'#1b496b',800);target(c,l,'text','우리 동네 이름',x+15,y+3,w-30,h-6,Math.min(24,h*.48));c.restore();return;}
+    if(type==='place'){fillRound(c,x,y,w,h,16,'rgba(255,255,255,.76)');const pinSize=Math.min(h*.65,w*.16),tx=x+12+(hasIcon(l)?pinSize+6:0);drawIcon(c,l,x+12,y+(h-pinSize)/2,pinSize);const size=fittedText(c,l.text||'우리 동네',tx,y+h/2,x+w-12-tx,Math.min(24,h*.48),'#1b496b',800);target(c,l,'text','우리 동네 이름',tx,y+3,x+w-12-tx,h-6,size);c.restore();return;}
     if(type==='life'){drawLifeCard(c,l);c.restore();return;}
     if(type==='developer'){drawDeveloperCard(c,l);c.restore();return;}
-    card(c,l);const pad=Math.max(9,16*scale),small=Math.max(9,12*scale),iconSize=Math.max(18,24*scale);if(type==='temp'){drawIcon(c,l,x+pad,y+29*scale-iconSize/2,iconSize);fittedText(c,'지금 기온',x+pad+iconSize+5,y+29*scale,w-2*pad-iconSize-5,Math.min(17,h*.16),'#547086',750);let unitSize=Math.min(22,Math.max(14,h*.17)),unitWidth=unitSize+6,size=Math.min(76,h*.51);fittedText(c,`${l.value??24}°`,x+pad,y+h*.63,w-2*pad-unitWidth,size,'#173c5c',850);target(c,l,'value','기온',x+pad,y+h*.63-size*.65,w-2*pad-unitWidth,size*1.3,size);text(c,'℃',x+w-pad,y+h*.75,unitSize,'#7190a7',750,'right');}
-    else if(type==='hourly'){drawIcon(c,l,x+pad,y+25*scale-iconSize/2,iconSize);text(c,'시간대별 날씨',x+pad+iconSize+5,y+25*scale,Math.max(11,15*scale),'#43627a',800);let slotW=(w-pad*2)/4;(l.slots||[]).slice(0,4).forEach((s,i)=>{let sx=x+pad+slotW*(i+.5),timeSize=Math.max(9,11*scale),skySize=Math.max(17,24*scale),tempSize=Math.max(11,17*scale);text(c,s.time||'',sx,y+52*scale,timeSize,'#70889a',700,'center');target(c,l,`slot.${i}.time`,`${i+1}번째 시간`,sx-slotW/2+2,y+52*scale-timeSize*.65,slotW-4,timeSize*1.3,timeSize);text(c,s.sky||'☀',sx,y+85*scale,skySize,'#234965',700,'center');target(c,l,`slot.${i}.sky`,`${i+1}번째 하늘 아이콘`,sx-slotW/2+2,y+85*scale-skySize*.65,slotW-4,skySize*1.3,skySize);text(c,`${s.temp??0}°`,sx,y+119*scale,tempSize,'#183e5c',800,'center');target(c,l,`slot.${i}.temp`,`${i+1}번째 기온`,sx-slotW/2+2,y+119*scale-tempSize*.65,slotW-4,tempSize*1.3,tempSize);});}
-    else{let label=type==='rain'&&modeWeather==='real'?'최근 강수량':names[type],value='';if(type==='wind')value=`${l.direction||'북동'}풍  ${l.speed??0}m/s`;if(type==='humidity')value=`${l.value??0}%`;if(type==='cloud')value=`${l.value??0}/10`;if(type==='rain')value=`${l.value??0}mm`;drawIcon(c,l,x+pad,y+29*scale-iconSize/2,iconSize);fittedText(c,label,x+pad+iconSize+5,y+29*scale,w-2*pad-iconSize-5,Math.min(16,h*.17),'#667f92',750);const size=fittedText(c,value,x+pad,y+h*.68,w-2*pad,Math.min(52,h*.43),'#19415f',850),ty=y+h*.68-size*.65;if(type==='wind'){const directionWidth=c.measureText(`${l.direction||'북동'}풍  `).width;target(c,l,'direction','바람 방향',x+pad,ty,directionWidth,size*1.3,size);target(c,l,'speed','바람 빠르기',x+pad+directionWidth,ty,w-2*pad-directionWidth,size*1.3,size);}else target(c,l,'value',names[type],x+pad,ty,w-2*pad,size*1.3,size);}
+    if(['temp','wind','humidity','cloud','rain'].includes(type)){drawWeatherCard(c,l);c.restore();return;}
+    card(c,l);const pad=Math.max(9,16*scale),iconSize=Math.max(18,24*scale);
+    if(type==='hourly'){drawIcon(c,l,x+pad,y+25*scale-iconSize/2,iconSize);text(c,'시간대별 날씨',x+pad+(hasIcon(l)?iconSize+5:0),y+25*scale,Math.max(11,15*scale),'#43627a',800);let slotW=(w-pad*2)/4;(l.slots||[]).slice(0,4).forEach((s,i)=>{let sx=x+pad+slotW*(i+.5),timeSize=Math.max(9,11*scale),skySize=Math.max(17,24*scale),tempSize=Math.max(11,17*scale);text(c,s.time||'',sx,y+52*scale,timeSize,'#70889a',700,'center');target(c,l,`slot.${i}.time`,`${i+1}번째 시간`,sx-slotW/2+2,y+52*scale-timeSize*.65,slotW-4,timeSize*1.3,timeSize);drawColorIcon(c,s.sky||'☀',sx-skySize/2,y+85*scale-skySize/2,skySize);target(c,l,`slot.${i}.sky`,`${i+1}번째 하늘 아이콘`,sx-slotW/2+2,y+85*scale-skySize*.65,slotW-4,skySize*1.3,skySize);text(c,`${s.temp??0}°`,sx,y+119*scale,tempSize,'#183e5c',800,'center');target(c,l,`slot.${i}.temp`,`${i+1}번째 기온`,sx-slotW/2+2,y+119*scale-tempSize*.65,slotW-4,tempSize*1.3,tempSize);});}
     c.restore();}
   function render(c,showSelection=true){if(c===ctx)targets=[];c.clearRect(0,0,W,H);drawBackground(c);text(c,'9:41',28,33,14,bg==='night'||bg==='rainy'?'#fff':'#234861',800);text(c,'●●●  ▰',362,33,12,bg==='night'||bg==='rainy'?'#fff':'#234861',750,'right');layers.forEach(l=>drawLayer(c,l));if(modeWeather==='real')text(c,'자료 Open-Meteo · 수치 반올림',W-18,H-25,10,bg==='night'||bg==='rainy'?'#fff':'#315b78',650,'right');if(showSelection){let l=layers.find(q=>q.id===selected);if(l){c.save();c.strokeStyle='#1479ce';c.lineWidth=3;c.setLineDash([8,5]);roundRect(c,l.x-2,l.y-2,l.w+4,l.h+4,20);c.stroke();c.setLineDash([]);fillRound(c,l.x+l.w-17,l.y+l.h-17,25,25,7,'#1479ce');text(c,'↘',l.x+l.w-4,l.y+l.h-4,16,'#fff',800,'center');c.restore();}}if(c===ctx)syncPhoneTargets();}
   function updateWeatherControls(){regionSelect.value=weatherRegion;document.querySelectorAll('[data-weather-mode]').forEach(b=>{b.classList.toggle('active',b.dataset.weatherMode===modeWeather);if(b.dataset.weatherMode==='real')b.disabled=!!weatherRequest;else b.hidden=modeWeather!=='real'&&!weatherRequest;});const button=document.getElementById('refreshWeatherBtn');button.hidden=modeWeather!=='real';button.disabled=!!weatherRequest;const note=document.getElementById('weatherNote');note.classList.toggle('error',!!weatherStatus?.error);if(weatherStatus)note.textContent=weatherStatus.message;else if(modeWeather==='real'&&lastWeatherAt)note.textContent=`${regionById(lastWeatherRegion).name} 대표 지점 예보 · ${lastWeatherAt.replace('T',' ')} 기준`;else note.textContent='필요할 때 현재 실제날씨를 참고해 보세요.';}
@@ -209,13 +279,13 @@
     const focus=editFocus?.id===l.id?editFocus:null,key=focus?.key;heading.textContent=focus?.label||`${names[l.type]} 카드`;
     let html='';
     if(key==='icon'){
-      const choices=l.type==='life'?lifeIcons:({temp:[['🌡','온도계'],['☀','해'],['❄','눈']],wind:[['➤','화살표'],['💨','바람'],['🍃','나뭇잎']],humidity:[['💧','물방울'],['💦','물']],cloud:[['☁','구름'],['⛅','구름과 해']],rain:[['☂','우산'],['🌧','비구름']],hourly:[['◷','시계'],['🕒','시간']],developer:[['✦','별'],['⭐','반짝이는 별'],['🌈','무지개'],['🙂','얼굴']]}[l.type]||[]);
+      const choices=l.type==='life'?lifeIcons:({place:[['⌖','위치']],temp:[['🌡','온도계'],['☀','해'],['❄','눈']],wind:[['➤','화살표'],['💨','바람'],['🍃','나뭇잎']],humidity:[['💧','물방울'],['💦','물']],cloud:[['☁','구름'],['⛅','구름과 해'],['☀','맑음']],rain:[['☂','우산'],['🌧','비구름'],['☀','맑음'],['☁','흐림']],hourly:[['◷','시계'],['🕒','시간']],developer:[['✦','별'],['⭐','반짝이는 별'],['🌈','무지개'],['🙂','얼굴']]}[l.type]||[]);
       const selectedIcon=l.type==='life'?(l.lifeIconKey||layerIcon(l)):layerIcon(l);
-      html+=`<div class="field"><label>아이콘 고르기<select data-key="emoji">${l.iconData?'<option value="drawn" selected>🎨 직접 그린 아이콘</option>':''}${choices.map(([icon,label,value=icon])=>`<option value="${value}" ${!l.iconData&&selectedIcon===value?'selected':''}>${icon} ${label}</option>`).join('')}</select></label></div><button class="draw-button" data-action="draw" type="button">🎨 ${l.type==='developer'?'개발자 상징 아이콘 직접 그리기':'이 요소의 아이콘 직접 그리기'}</button>`;
+      html+=`<div class="field"><label>아이콘 고르기<select data-key="emoji"><option value="none" ${!hasIcon(l)?'selected':''}>아이콘 없음</option>${l.iconData?`<option value="drawn" ${hasIcon(l)?'selected':''}>🎨 직접 그린 아이콘</option>`:''}${choices.map(([icon,label,value=icon])=>`<option value="${value}" ${hasIcon(l)&&!l.iconData&&selectedIcon===value?'selected':''}>${colorIcon(icon)} ${label}</option>`).join('')}</select></label></div><button class="draw-button" data-action="draw" type="button">🎨 ${l.type==='developer'?'개발자 상징 아이콘 직접 그리기':'이 요소의 아이콘 직접 그리기'}</button>`;
     }else if(key==='category'){
-      html+=`<div class="field"><label>생활정보 종류<select data-key="category">${Object.entries(lifeKinds).map(([k,v])=>`<option value="${k}" ${l.category===k?'selected':''}>${v.icon} ${v.label}</option>`).join('')}</select></label></div><p class="hint">휴대폰의 생활 제안과 날씨 근거를 눌러, 관찰한 날씨를 바탕으로 내 생각을 써 보세요.</p>`;
+      html+=`<div class="field"><label>생활정보 종류<select data-key="category">${Object.entries(lifeKinds).map(([k,v])=>`<option value="${k}" ${l.category===k?'selected':''}>${colorIcon(v.icon)} ${v.label}</option>`).join('')}</select></label></div><p class="hint">휴대폰의 생활 제안과 날씨 근거를 눌러, 관찰한 날씨를 바탕으로 내 생각을 써 보세요.</p>`;
     }else if(/^slot\.\d\.sky$/.test(key||'')){
-      const skyLabels={'☀':'맑음','⛅':'구름 조금','☁':'흐림','☂':'비','❄':'눈','☾':'밤'};html+=`<div class="field"><label>${esc(focus.label)}<select data-key="${key}">${Object.entries(skyLabels).map(([v,label])=>`<option value="${v}" ${readValue(l,key)===v?'selected':''}>${v} ${label}</option>`).join('')}</select></label></div>`;
+      const skyLabels={none:'아이콘 없음','☀':'맑음','⛅':'구름 조금','☁':'흐림','☂':'비','❄':'눈','☾':'밤'};html+=`<div class="field"><label>${esc(focus.label)}<select data-key="${key}">${Object.entries(skyLabels).map(([v,label])=>`<option value="${v}" ${readValue(l,key)===v?'selected':''}>${v==='none'?'':colorIcon(v)+' '}${label}</option>`).join('')}</select></label></div>`;
     }else if(key&&canEdit(l,key)){
       const spec=fieldSpec(l,key);html+=`<p class="hint">휴대폰 화면에서 ${esc(focus.label)} 내용을 바로 입력해요.${spec?.numeric?' 숫자만 입력하면 단위는 그대로 표시돼요.':''}</p><p class="hint">${spec?.multiline?'입력을 마치면 다른 곳을 눌러요.':'Enter를 누르거나 다른 곳을 누르면 입력이 끝나요.'}<br>Esc를 누르면 이번 입력을 취소해요.</p>`;
       if(spec?.choices)html+=`<p class="hint">${spec.choices.join(' · ')} 중 하나를 입력하거나 골라요.</p>`;
@@ -224,7 +294,7 @@
     html+='<p class="hint">카드를 끌어 옮기고, 파란 손잡이를 끌어 크기를 바꿔요.</p><div class="edit-actions"><button data-action="back" type="button">뒤로</button><button data-action="front" type="button">앞으로</button><button data-action="delete" class="danger" type="button">삭제</button></div>';box.innerHTML=html;
     if(key&&!canEdit(l,key))box.querySelectorAll('[data-key]').forEach(input=>input.disabled=true);
   }
-  function renderLayerList(){document.getElementById('layerList').innerHTML=layers.length?layers.map((l,i)=>`<button type="button" class="layer-row ${l.id===selected?'active':''}" data-id="${l.id}"><span>${l.iconData?'🎨':layerIcon(l)} ${names[l.type]}${l.type==='life'?' · '+lifeKind(l).label:''}</span><small>${i+1}층</small></button>`).join(''):'<p class="hint">아직 요소가 없어요. 왼쪽에서 추가해 주세요.</p>';const count=layers.filter(l=>l.type==='life').length;document.getElementById('addLifeBtn').disabled=count>=2;document.getElementById('lifeNote').textContent=count>=2?'생활정보 2개를 넣었어요. 목록에서 골라 내용을 고쳐 보세요.':'1~2개를 넣어 보세요. 추가하면 카드가 보기 좋게 정리돼요.';}
+  function renderLayerList(){document.getElementById('layerList').innerHTML=layers.length?layers.map((l,i)=>`<button type="button" class="layer-row ${l.id===selected?'active':''}" data-id="${l.id}"><span><span class="color-icon">${!hasIcon(l)?'':l.iconData?'🎨':colorIcon(layerIcon(l))}</span> ${names[l.type]}${l.type==='life'?' · '+lifeKind(l).label:''}</span><small>${i+1}층</small></button>`).join(''):'<p class="hint">아직 요소가 없어요. 왼쪽에서 추가해 주세요.</p>';const count=layers.filter(l=>l.type==='life').length;document.getElementById('addLifeBtn').disabled=count>=2;document.getElementById('lifeNote').textContent=count>=2?'생활정보 2개를 넣었어요. 목록에서 골라 내용을 고쳐 보세요.':'1~2개를 넣어 보세요. 추가하면 카드가 보기 좋게 정리돼요.';}
   const overviewPositions={title:[24,76,342,76],place:[24,155,342,55],temp:[24,220,342,132],wind:[24,369,163,102],humidity:[203,369,163,102],cloud:[24,486,163,102],rain:[203,486,163,102],hourly:[24,606,342,148]};
   function positionsFor(t){const count=layers.filter(l=>l.type==='life').length;
     if(layers.some(l=>l.type==='developer')){
@@ -296,7 +366,7 @@
   document.getElementById('addLifeBtn').addEventListener('click',()=>addLayer('life'));
   document.getElementById('addDeveloperBtn').addEventListener('click',()=>addLayer('developer'));
   document.getElementById('layerList').addEventListener('click',e=>{let b=e.target.closest('[data-id]');if(b){finishInline();editFocus=null;selected=Number(b.dataset.id);refresh();}});
-  document.getElementById('editor').addEventListener('input',e=>{let key=e.target.dataset.key,l=layers.find(q=>q.id===selected);if(!key||!l||!canEdit(l,key==='emoji'?'icon':key))return;let raw=e.target.value;if(key==='category'&&l.type==='life'){const previous=lifeKind(l);l.category=raw;if(l.emoji===previous.icon){l.emoji=lifeKind(l).icon;delete l.lifeIconKey;}renderLayerList();}else if(key==='emoji'){if(raw!=='drawn'){const choice=l.type==='life'?lifeIcons.find(([icon,,value=icon])=>value===raw):null;l.emoji=choice?choice[0]:raw;delete l.lifeIconKey;if(choice?.[2])l.lifeIconKey=choice[2];delete l.iconData;}renderLayerList();}else writeValue(l,key,raw);render(ctx);scheduleSave();});
+  document.getElementById('editor').addEventListener('input',e=>{let key=e.target.dataset.key,l=layers.find(q=>q.id===selected);if(!key||!l||!canEdit(l,key==='emoji'?'icon':key))return;let raw=e.target.value;if(key==='category'&&l.type==='life'){const previous=lifeKind(l);l.category=raw;if(l.emoji===previous.icon){l.emoji=lifeKind(l).icon;delete l.lifeIconKey;}renderLayerList();}else if(key==='emoji'){l.iconHidden=raw==='none';if(raw!=='none'&&raw!=='drawn'){const choice=l.type==='life'?lifeIcons.find(([icon,,value=icon])=>value===raw):null;l.emoji=choice?choice[0]:raw;delete l.lifeIconKey;if(choice?.[2])l.lifeIconKey=choice[2];delete l.iconData;}renderLayerList();}else writeValue(l,key,raw);render(ctx);scheduleSave();});
   document.getElementById('editor').addEventListener('change',e=>{if(e.target.dataset.key&&e.target.tagName==='SELECT')refresh();});
   document.getElementById('editor').addEventListener('click',e=>{let action=e.target.dataset.action,l=layers.find(q=>q.id===selected),i=layers.indexOf(l);if(!l||!action)return;if(action==='draw'){openIconDialog(l);return;}if(action==='delete'){layers.splice(i,1);selected=layers.at(-1)?.id||null;}if(action==='front'&&i<layers.length-1){layers.splice(i,1);layers.splice(i+1,0,l);}if(action==='back'&&i>0){layers.splice(i,1);layers.splice(i-1,0,l);}refresh();});
   document.getElementById('imageInput').addEventListener('change',e=>{let file=e.target.files?.[0];if(!file||!file.type.startsWith('image/'))return;let reader=new FileReader();reader.onload=()=>{let img=new Image();img.onload=()=>{let scale=Math.min(1,1600/Math.max(img.width,img.height)),small=document.createElement('canvas');small.width=Math.max(1,Math.round(img.width*scale));small.height=Math.max(1,Math.round(img.height*scale));small.getContext('2d').drawImage(img,0,0,small.width,small.height);ownImageSrc=small.toDataURL('image/jpeg',.82);ownImage=img;bg='upload';refresh();document.getElementById('status').textContent='그림을 배경에 넣었어요.';};img.src=reader.result;};reader.readAsDataURL(file);});
@@ -313,12 +383,12 @@
   document.getElementById('eraserBtn').addEventListener('click',()=>{eraser=true;document.getElementById('eraserBtn').classList.add('active');document.getElementById('penBtn').classList.remove('active');});
   document.getElementById('clearIconBtn').addEventListener('click',()=>{drawCtx.clearRect(0,0,drawCanvas.width,drawCanvas.height);if(drawPurpose==='background'){drawCtx.fillStyle='#fff';drawCtx.fillRect(0,0,W,H);}});
   document.getElementById('cancelIconBtn').addEventListener('click',()=>iconDialog.close());
-  document.getElementById('saveIconBtn').addEventListener('click',()=>{if(drawPurpose==='background'){ownImageSrc=drawCanvas.toDataURL('image/png');let img=new Image();img.onload=()=>{ownImage=img;refresh();};img.src=ownImageSrc;bg='drawn';refresh();document.getElementById('status').textContent='직접 그린 그림을 배경으로 넣었어요.';}else{let l=layers.find(q=>q.id===editingIconId);if(l){l.iconData=drawCanvas.toDataURL('image/png');iconImage(l.iconData);refresh();}}iconDialog.close();});
+  document.getElementById('saveIconBtn').addEventListener('click',()=>{if(drawPurpose==='background'){ownImageSrc=drawCanvas.toDataURL('image/png');let img=new Image();img.onload=()=>{ownImage=img;refresh();};img.src=ownImageSrc;bg='drawn';refresh();document.getElementById('status').textContent='직접 그린 그림을 배경으로 넣었어요.';}else{let l=layers.find(q=>q.id===editingIconId);if(l){delete l.iconHidden;l.iconData=drawCanvas.toDataURL('image/png');iconImage(l.iconData);refresh();}}iconDialog.close();});
   document.getElementById('drawBackgroundBtn').addEventListener('click',openBackgroundDialog);
   document.getElementById('saveBtn').addEventListener('click',saveNow);document.getElementById('savePanelBtn').addEventListener('click',saveNow);
   document.getElementById('loadBtn').addEventListener('click',()=>{clearTimeout(saveTimer);if(!loadSaved())document.getElementById('saveNote').textContent='불러올 저장본이 없어요.';});
   document.getElementById('resetBtn').addEventListener('click',()=>{if(!confirm('저장한 화면을 지우고 맑은 하늘에서 다시 시작할까요?'))return;initial();document.getElementById('status').textContent='맑은 하늘에서 다시 시작해요.';});
-  document.getElementById('downloadBtn').addEventListener('click',async()=>{if(!selected&&layers.length){selected=layers.at(-1).id;refresh();}await Promise.all(layers.filter(l=>l.iconData).map(l=>iconImage(l.iconData).ready));let out=document.createElement('canvas');out.width=(W+32)*3;out.height=(H+32)*3;let c=out.getContext('2d');c.scale(3,3);c.shadowColor='#0a284555';c.shadowBlur=16;c.shadowOffsetY=6;fillRound(c,2,2,W+28,H+28,45,'#1b2c3d');c.shadowColor='transparent';c.save();roundRect(c,16,16,W,H,30);c.clip();c.translate(16,16);render(c,true);c.restore();fillRound(c,(W+32-85)/2,16,85,22,10,'#1b2c3d');fillRound(c,(W+32-75)/2,H+23,75,4,3,'#ffffffb5');out.toBlob(blob=>{if(!blob){document.getElementById('status').textContent='그림 저장에 실패했어요.';return;}let url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='나의-날씨앱.png';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);document.getElementById('status').textContent='휴대폰 테두리와 손잡이가 포함된 PNG를 저장했어요.';},'image/png');});
+  document.getElementById('downloadBtn').addEventListener('click',async()=>{if(!selected&&layers.length){selected=layers.at(-1).id;refresh();}await Promise.all(layers.filter(l=>hasIcon(l)&&l.iconData).map(l=>iconImage(l.iconData).ready));let out=document.createElement('canvas');out.width=(W+32)*3;out.height=(H+32)*3;let c=out.getContext('2d');c.scale(3,3);c.shadowColor='#0a284555';c.shadowBlur=16;c.shadowOffsetY=6;fillRound(c,2,2,W+28,H+28,45,'#1b2c3d');c.shadowColor='transparent';c.save();roundRect(c,16,16,W,H,30);c.clip();c.translate(16,16);render(c,true);c.restore();fillRound(c,(W+32-85)/2,16,85,22,10,'#1b2c3d');fillRound(c,(W+32-75)/2,H+23,75,4,3,'#ffffffb5');out.toBlob(blob=>{if(!blob){document.getElementById('status').textContent='그림 저장에 실패했어요.';return;}let url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='나의-날씨앱.png';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);document.getElementById('status').textContent='휴대폰 테두리와 손잡이가 포함된 PNG를 저장했어요.';},'image/png');});
   if(!loadSaved())initial();
 })();
 </script>
